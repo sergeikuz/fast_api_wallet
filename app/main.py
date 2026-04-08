@@ -33,7 +33,7 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins.split(","),
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -67,7 +67,4 @@ async def health() -> dict[str, str]:
         return {"status": "ok"}
     except Exception as e:
         logger.error("Health check failed: %s", e)
-        return JSONResponse(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            content={"status": "error", "detail": str(e)},
-        )
+        return {"status": "error", "detail": str(e)}
