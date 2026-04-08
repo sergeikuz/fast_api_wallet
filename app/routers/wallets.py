@@ -11,6 +11,7 @@ from app.schemas import BalanceResponse, OperationRequest, WalletListResponse
 from app.services.wallet_service import (
     apply_operation,
     ensure_wallet_exists,
+    get_wallet,
     lock_wallet,
 )
 
@@ -50,7 +51,7 @@ async def list_wallets(
     responses={404: {"description": "Wallet not found"}},
 )
 async def get_balance(wallet_id: UUID, db: AsyncSession = Depends(get_db)) -> BalanceResponse:
-    wallet = await lock_wallet(db, wallet_id)
+    wallet = await get_wallet(db, wallet_id)
     return BalanceResponse(
         wallet_id=wallet.id,
         balance=wallet.balance,
