@@ -3,11 +3,11 @@
 ## Commands
 
 ```bash
-uv run pytest tests/ -v          # Run tests (requires PostgreSQL on localhost)
-uv run ruff check app/ tests/    # Lint
-uv run ruff format app/ tests/   # Format
-uv run alembic upgrade head      # Run migrations
-make help                        # All commands
+make test           # Run tests (requires PostgreSQL on localhost)
+make lint           # Run ruff linter + format check
+make format         # Auto-fix lint issues + format code
+make migrate        # Apply database migrations locally
+make help           # Show all available commands
 ```
 
 ## Critical Gotchas
@@ -23,12 +23,21 @@ make help                        # All commands
 
 ```
 routers/wallets.py  →  services/wallet_service.py  →  models.py  →  PostgreSQL
+                    ↑
+            (Pure business logic & data access layers)
 ```
 
 - **Balance is `Decimal`**, never `float`. Numeric(15,2) in DB.
 - **`SELECT ... FOR UPDATE`** in `lock_wallet()` — pessimistic row lock for concurrent writes. Do not replace with plain SELECT on write paths.
 - **`INSERT ... ON CONFLICT DO NOTHING`** in `ensure_wallet_exists()` — atomic wallet creation under concurrent requests.
 - **`CHECK (balance >= 0)`** constraint in migration — final safety net at DB level.
+
+## Recent Improvements
+
+- **Service Layer Refactored**: Separated pure business logic, data access, and service orchestration concerns
+- **Single Source of Truth**: `OperationType` enum now defined only in `schemas.py`
+- **Database Constraint**: Added explicit `CHECK (balance >= 0)` at DB level
+- **Clean Architecture**: Better separation of concerns following SOLID principles
 
 ## Alembic
 

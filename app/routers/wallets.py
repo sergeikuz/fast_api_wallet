@@ -8,12 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.models import Wallet
 from app.schemas import BalanceResponse, OperationRequest, WalletListResponse
-from app.services.wallet_service import (
-    apply_operation,
-    ensure_wallet_exists,
-    get_wallet,
-    lock_wallet,
-)
+from app.services.wallet_service import WalletService
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +46,8 @@ async def list_wallets(
     responses={404: {"description": "Wallet not found"}},
 )
 async def get_balance(wallet_id: UUID, db: AsyncSession = Depends(get_db)) -> BalanceResponse:
-    wallet = await get_wallet(db, wallet_id)
+    wallet_service = WalletService(db)
+    wallet = await wallet_service.get_wallet_or_404(wallet_id)
     return BalanceResponse(
         wallet_id=wallet.id,
         balance=wallet.balance,
@@ -76,17 +72,12 @@ async def perform_operation(
     data: OperationRequest,
     db: AsyncSession = Depends(get_db),
 ) -> BalanceResponse:
-    async with db.begin():
-        await ensure_wallet_exists(db, wallet_id)
-        wallet = await lock_wallet(db, wallet_id)
-        apply_operation(wallet, data.operation_type, data.amount)
-        await db.flush()
-        await db.refresh(wallet)
-        response_data = {
-            "wallet_id": wallet.id,
-            "balance": wallet.balance,
-            "created_at": wallet.created_at,
-            "updated_at": wallet.updated_at,
-        }
+    wallet_service = WalletService(db)
+    wallet = await wallet_service.perform_operation(wallet_id, data.operation_type, data.amount)
 
-    return BalanceResponse(**response_data)
+    return BalanceResponse(
+        wallet_id=wallet.id,
+        balance=wallet.balance,
+        created_at=wallet.created_at,
+        updated_at=wallet.updated_at,
+    )

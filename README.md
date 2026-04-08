@@ -24,6 +24,13 @@ Async REST API for managing user wallets with concurrent-safe balance operations
 | Package manager | uv |
 | CI/CD | GitHub Actions |
 
+## Recent Improvements
+
+- **Service Layer Refactored**: Separated pure business logic, data access, and service orchestration concerns
+- **Single Source of Truth**: `OperationType` enum now defined only in `schemas.py`
+- **Database Constraint**: Added explicit `CHECK (balance >= 0)` at DB level
+- **Clean Architecture**: Better separation of concerns following SOLID principles
+
 ## Architecture
 
 ```
@@ -50,10 +57,12 @@ Async REST API for managing user wallets with concurrent-safe balance operations
 │  └───────────────────────────────────┘  │
 └──────────────────┬──────────────────────┘
                    │
-          ┌────────▼────────┐
-          │   PostgreSQL    │
-          │  (asyncpg)      │
-          └─────────────────┘
+           ┌────────▼────────┐
+           │   PostgreSQL    │
+           │  (asyncpg)      │
+           └─────────────────┘
+                    ↑
+            (Pure business logic & data access layers)
 ```
 
 ## Concurrency Safety
@@ -75,6 +84,13 @@ Two mechanisms protect against race conditions on concurrent wallet operations:
 | **L** — Liskov Substitution | `OperationType` inherits from `StrEnum`, behaving as both an enum and a string — interchangeable in all contexts |
 | **I** — Interface Segregation | Separate functions for each DB operation: `get_wallet`, `ensure_wallet_exists`, `lock_wallet`, `apply_operation` — callers use only what they need |
 | **D** — Dependency Inversion | Router depends on abstract `get_db` dependency injection, not concrete session creation. Service layer depends on `AsyncSession` interface, not a specific implementation |
+
+## Recent Improvements
+
+- **Service Layer Refactored**: Separated pure business logic, data access, and service orchestration concerns
+- **Single Source of Truth**: `OperationType` enum now defined only in `schemas.py`
+- **Database Constraint**: Added explicit `CHECK (balance >= 0)` at DB level
+- **Clean Architecture**: Better separation of concerns following SOLID principles
 
 ## Quick Start
 
